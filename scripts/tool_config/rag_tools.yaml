@@ -1,0 +1,41 @@
+# Agentic RAG GRPO 训练用工具配置（Pure ReAct，仅 retrieval 一个工具）
+# 加载位置：actor_rollout_ref.rollout.multi_turn.tool_config_path
+#
+# class_name 解析路径：从 PYTHONPATH 起，scripts.verl_tools.retrieval_tool.RetrievalTool
+# run_grpo.sh 已经把 $PROJECT_ROOT 加到 PYTHONPATH（含 verl/），但还需要包含 scripts/ 父目录
+# 所以工具类用 "scripts.verl_tools.retrieval_tool.RetrievalTool" 形式（项目根目录在 PYTHONPATH）
+
+tools:
+  - class_name: "scripts.verl_tools.retrieval_tool.RetrievalTool"
+    config:
+      type: native
+      persist_directory: "./rag_cache/chroma_db"
+      topk_recall: 10
+      topk_return: 5
+      keyword_bonus: 0.1
+      max_chars_per_chunk: 800
+    tool_schema:
+      type: "function"
+      function:
+        name: "retrieval_augment"
+        description: |
+          Search the school regulation knowledge base. Returns the top-5 most relevant document chunks.
+          Use this tool when the user's question is about school rules, policies, or any specific regulation
+          that requires factual grounding from the knowledge base.
+          You may call this tool multiple times with different (refined) queries if the first results are not sufficient.
+        parameters:
+          type: "object"
+          properties:
+            query:
+              type: "string"
+              description: |
+                The search query to retrieve relevant documents.
+                You may rewrite the user's original question into a more retrieval-friendly form
+                (e.g., expand abbreviations, add context terms).
+            keyword:
+              type: "string"
+              description: |
+                A short, specific keyword extracted from the query, used for keyword-aware reranking.
+                Documents containing this keyword will be ranked higher.
+                Pass an empty string if no clear keyword.
+          required: ["query", "keyword"]
